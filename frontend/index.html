@@ -1,72 +1,214 @@
 <!doctype html>
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>AWS Task Manager</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Automated Task Manager</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+      :root{
+        --bg:#0f1724;
+        --card:#0b1220;
+        --muted:#94a3b8;
+        --accent:#7c3aed;
+        --glass: rgba(255,255,255,0.04);
+        --radius:14px;
+      }
+      *{box-sizing:border-box}
+      html,body{height:100%}
+      body{
+        margin:0;font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,Arial;
+        background:radial-gradient(1200px 600px at 10% 10%, rgba(124,58,237,0.12), transparent),
+                   linear-gradient(180deg,#071026 0%, #061423 100%);
+        color:#e6eef8;-webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
+        padding:40px;
+      }
+      .wrap{max-width:980px;margin:0 auto}
+      header{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px}
+      .brand{display:flex;gap:12px;align-items:center}
+      .logo{width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,var(--accent),#06b6d4);display:flex;align-items:center;justify-content:center;color:white;font-weight:700}
+      h1{font-size:20px;margin:0}
+      .subtitle{color:var(--muted);font-size:13px}
+
+      .hero{background:linear-gradient(180deg, rgba(255,255,255,0.02), transparent);border-radius:var(--radius);padding:22px;display:grid;grid-template-columns:1fr 320px;gap:18px;align-items:start}
+      .intro h2{margin:0 0 8px 0;font-size:20px}
+      .intro p{margin:0;color:var(--muted);line-height:1.5}
+
+      .panel{background:var(--card);border-radius:12px;padding:14px;box-shadow:0 6px 18px rgba(2,6,23,0.6)}
+
+      form{display:flex;gap:8px;align-items:center}
+      input[type="text"]{flex:1;padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);background:var(--glass);color:inherit}
+      button{padding:10px 14px;border-radius:10px;border:0;background:linear-gradient(90deg,var(--accent),#06b6d4);color:white;font-weight:600;cursor:pointer}
+      .muted{color:var(--muted);font-size:13px}
+
+      .tasks{margin-top:16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
+      .task{background:linear-gradient(180deg, rgba(255,255,255,0.02), transparent);padding:12px;border-radius:10px;display:flex;justify-content:space-between;align-items:center}
+      .task .title{font-weight:600}
+      .task .done{color:#34d399;font-weight:700}
+
+      footer{margin-top:22px;color:var(--muted);font-size:13px;text-align:center}
+
+      /* responsive */
+      @media (max-width:820px){
+        .hero{grid-template-columns:1fr;}
+      }
+    </style>
   </head>
   <body>
-    <h1>Task Manager</h1>
+    <div class="wrap">
+      <header>
+        <div class="brand">
+          <div class="logo">AM</div>
+          <div>
+            <h1>AWS Automated EC2 Task Manager</h1>
+            <div class="subtitle">Simplify scheduled EC2 operations and automation</div>
+          </div>
+        </div>
+        <div class="muted">Local preview • Connects to your backend</div>
+      </header>
 
-    <input id="title" placeholder="New task" />
-    <button id="add">Add Task</button>
-    <button id="load">Load Tasks</button>
+      <section class="hero">
+        <div class="intro">
+          <h2>Manage tasks for EC2 automation</h2>
+          <p class="muted">Create, view and run automation tasks that control EC2 instances. This demo UI connects to your backend API and shows live data.</p>
 
-    <h2>Tasks</h2>
-    <ul id="list"></ul>
+          <div class="panel" style="margin-top:14px">
+            <form id="taskForm">
+              <input id="title" type="text" placeholder="e.g. Stop unused instances at 11pm" aria-label="Task title" />
+              <button id="add">Add Task</button>
+            </form>
+            <div style="margin-top:10px;display:flex;gap:8px;align-items:center">
+              <button id="load">Refresh</button>
+              <div style="display:flex;flex-direction:column">
+                <div class="muted" id="status">No requests yet</div>
+                <div id="lastError" style="margin-top:6px;color:#ff9b9b;font-size:13px;max-width:260px;word-break:break-word"></div>
+              </div>
+            </div>
+          </div>
 
-    <pre id="debug"></pre>
+          <div class="muted" style="margin-top:12px">Tip: open developer console to see debug logs from API calls.</div>
+        </div>
+
+        <aside style="display:flex;flex-direction:column;gap:12px">
+          <div class="panel">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <div>
+                <div class="muted">Total tasks</div>
+                <div id="count" style="font-size:20px;font-weight:700">0</div>
+              </div>
+              <div class="muted">Backend: <span id="apiHost">--</span></div>
+            </div>
+          </div>
+
+          <div class="panel" style="text-align:left">
+            <div class="muted">Status</div>
+            <div id="log" style="margin-top:8px;color:var(--muted);font-size:13px;max-height:120px;overflow:auto"></div>
+          </div>
+        </aside>
+      </section>
+
+      <section style="margin-top:18px">
+        <h3 style="margin:0 0 8px 0">Tasks</h3>
+        <div id="list" class="tasks"></div>
+      </section>
+
+      <footer>Built for demo • Connects to `backend` API. Open the README for run instructions.</footer>
+    </div>
 
     <script>
-      // IMPORTANT: this must point to the backend on port 3000
-      const API_BASE = "http://localhost:3000";
+      // IMPORTANT: detect a local backend during development. Use the remote IP otherwise.
+      // If the page is opened via file:// or hostname is empty, default to localhost for development.
+      const isLocal = location.protocol === 'file:' || !location.hostname || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+      const API_BASE = isLocal ? 'http://localhost:3000' : 'http://65.2.172.218:3000';
 
-      function log(msg) {
-        const dbg = document.getElementById("debug");
-        dbg.textContent += msg + "\n";
+      const statusEl = document.getElementById('status');
+      const logEl = document.getElementById('log');
+      const apiHostEl = document.getElementById('apiHost');
+      apiHostEl.textContent = new URL(API_BASE).host;
+
+      function writeLog(msg){
+        const line = document.createElement('div');
+        line.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+        logEl.prepend(line);
+        if(logEl.childElementCount>50) logEl.removeChild(logEl.lastChild);
       }
 
-      async function loadTasks() {
-        log("Loading tasks...");
-        try {
-          const res = await fetch(API_BASE + "/api/tasks");
-          log("Status: " + res.status);
-          const tasks = await res.json();
-          const ul = document.getElementById("list");
-          ul.innerHTML = "";
-          tasks.forEach(t => {
-            const li = document.createElement("li");
-            li.textContent = t.title + (t.completed ? " (done)" : "");
-            ul.appendChild(li);
-          });
-          log("Loaded " + tasks.length + " tasks.");
-        } catch (e) {
-          log("Error loading tasks: " + e);
+        function showError(msg, details){
+          writeLog('ERROR: ' + msg);
+          console.error(msg, details);
+          const statusEl = document.getElementById('status');
+          statusEl.textContent = 'Error';
+          const last = document.getElementById('lastError');
+          if(last){ last.textContent = typeof details === 'string' ? details : JSON.stringify(details); }
+        }
+
+      async function loadTasks(){
+        statusEl.textContent = 'Loading...';
+        writeLog('Fetching tasks from ' + API_BASE + '/api/tasks');
+        try{
+          const res = await fetch(API_BASE + '/api/tasks');
+          const text = await res.text();
+          if(!res.ok){
+            showError('GET /api/tasks failed', { status: res.status, body: text });
+            return;
+          }
+          let tasks;
+          try{ tasks = JSON.parse(text); }catch(err){ showError('Invalid JSON from /api/tasks', text); return; }
+          renderTasks(tasks);
+          statusEl.textContent = `Loaded ${tasks.length}`;
+          writeLog(`Loaded ${tasks.length} tasks (status ${res.status})`);
+        }catch(e){
+          showError('Network error loading tasks', e.message || e);
         }
       }
 
-      document.getElementById("load").onclick = loadTasks;
+      function renderTasks(tasks){
+        const list = document.getElementById('list');
+        const count = document.getElementById('count');
+        list.innerHTML = '';
+        count.textContent = tasks.length;
+        tasks.forEach(t => {
+          const el = document.createElement('div'); el.className='task';
+          const title = document.createElement('div'); title.className='title'; title.textContent = t.title;
+          const right = document.createElement('div');
+          if(t.completed){
+            const done = document.createElement('div'); done.className='done'; done.textContent='DONE'; right.appendChild(done);
+          }
+          el.appendChild(title); el.appendChild(right);
+          list.appendChild(el);
+        });
+      }
 
-      document.getElementById("add").onclick = async () => {
-        const input = document.getElementById("title");
+      document.getElementById('load').addEventListener('click', loadTasks);
+
+      document.getElementById('taskForm').addEventListener('submit', async (e)=>{
+        e.preventDefault();
+        const input = document.getElementById('title');
         const title = input.value.trim();
-        if (!title) {
-          log("No title entered");
-          return;
-        }
-        log("Adding task: " + title);
-        try {
-          const res = await fetch(API_BASE + "/api/tasks", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ title })
+        if(!title) return;
+        statusEl.textContent = 'Adding...';
+        writeLog('Adding task: '+title);
+        try{
+          const res = await fetch(API_BASE + '/api/tasks', {
+            method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title})
           });
-          log("Add status: " + res.status);
-          input.value = "";
+          const text = await res.text();
+          if(!res.ok){
+            showError('POST /api/tasks failed', { status: res.status, body: text });
+            return;
+          }
+          let created;
+          try{ created = JSON.parse(text); }catch(err){ showError('Invalid JSON from POST /api/tasks', text); return; }
+          writeLog('Created task id=' + created.id);
+          input.value = '';
           await loadTasks();
-        } catch (e) {
-          log("Error adding task: " + e);
+        }catch(e){
+          showError('Network error adding task', e.message || e);
         }
-      };
+      });
+
+      // initial load
+      loadTasks();
     </script>
   </body>
 </html>
